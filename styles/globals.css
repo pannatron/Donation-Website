@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 44, 16, 86;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom right,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
+}
+
+/* Custom styles for wallet button */
+.wallet-adapter-button {
+  @apply font-semibold rounded-lg px-6 py-2 transition-all duration-200;
+}
+
+.wallet-adapter-button-trigger {
+  @apply bg-purple-600 hover:bg-purple-700;
+}
+
+.wallet-adapter-modal-wrapper {
+  @apply bg-gray-900 border border-purple-500;
+}
+
+/* Animation classes */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.2);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.progress-tiger {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px;
+  width: 32px;
+  transition: left 0.5s ease-out;
+  z-index: 10;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-tiger::before,
+
+.progress-tiger::before {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+  animation: glowPulse 2s ease-in-out infinite;
+  box-shadow: 
+    0 0 20px 10px rgba(139, 92, 246, 0.3),
+    0 0 40px 20px rgba(217, 70, 239, 0.2),
+    0 0 60px 30px rgba(139, 92, 246, 0.1);
+}
+
+.progress-tiger::after {
+  border: 2px solid rgba(139, 92, 246, 0.6);
+  animation: rotate 4s linear infinite;
+}
+
+.progress-tiger img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.8))
+         drop-shadow(0 0 12px rgba(217, 70, 239, 0.6))
+         drop-shadow(0 0 16px rgba(139, 92, 246, 0.4));
+  position: relative;
+  z-index: 2;
+}
+
+.progress-bar-container {
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: visible;
+  box-shadow: 0 0 20px rgba(128, 90, 213, 0.3);
+}
+
+.progress-bar-fill {
+  background: linear-gradient(
+    90deg,
+    #8b5cf6,
+    #d946ef,
+    #8b5cf6
+  );
+  background-size: 200% auto;
+  animation: shine 3s linear infinite;
+}
+
+.milestone-card {
+  transform-origin: center;
+  transition: all 0.3s ease;
+}
+
+.milestone-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-purple-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-purple-700;
+}
+
+/* Input styles */
+input[type="number"] {
+  @apply bg-gray-800 text-white border border-purple-600 rounded-lg px-4 py-2;
+}
+
+input[type="number"]:focus {
+  @apply outline-none border-purple-400 ring-2 ring-purple-500 ring-opacity-50;
+}
+
+/* Remove number input arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Button styles and animations */
+.donate-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.donate-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.donate-button:hover:before {
+  left: 100%;
+}
+
+.donate-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Button disabled state */
+button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+  from {
+    width: 0;
+  }
+}

@@ -1,0 +1,16 @@
+/* wallet-button.css */
+.wallet-adapter-button {
+    background-color: #2563eb !important; /* สีฟ้า */
+    border-radius: 0.5rem !important; /* ขอบโค้งมน */
+    padding: 0.5rem 1rem !important; /* ระยะห่างภายใน */
+    font-size: 1rem !important; /* ขนาดตัวอักษร */
+    font-weight: 600 !important; /* น้ำหนักตัวอักษร */
+    color: #ffffff !important; /* สีตัวอักษร */
+    transition: all 0.2s ease-in-out !important;
+  }
+  
+  .wallet-adapter-button:hover {
+    background-color: #1d4ed8 !important; /* สีฟ้าเข้มตอน hover */
+    transform: scale(1.05) !important; /* ขยายเล็กน้อยตอน hover */
+  }
+  
