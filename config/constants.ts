@@ -32,7 +32,7 @@ export const NETWORK_CONFIG = {
   mainnet: {
     name: 'mainnet-beta' as const,
     // Using Alchemy RPC endpoint
-    endpoint: 'https://solana-mainnet.g.alchemy.com/v2/ToWBgOscnBednSQceC1B36ija8QiFMd6'
+    endpoint: 'https://solana-rpc.publicnode.com'
   }
 };
 
