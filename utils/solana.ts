@@ -18,20 +18,21 @@ import {
   Account
 } from '@solana/spl-token';
 
-// Increased timeouts for better transaction handling
-const RETRY_DELAY = 1000; // 1 second initial delay
-const MAX_RETRIES = 15; // Increased retries
-const CONFIRMATION_TIMEOUT = 120000; // 2 minutes max wait
-const RATE_LIMIT_DELAY = 2000; // 2 seconds initial rate limit delay
-const MAX_RATE_LIMIT_DELAY = 60000; // 30 seconds max delay
-const TRANSACTION_TIMEOUT = 180000; // 3 minutes total transaction timeout
-const SEND_TRANSACTION_TIMEOUT = 60000; // 1 minute for sending transaction
+// Reduced timeouts for faster UI feedback
+const RETRY_DELAY = 500; // 0.5 second initial delay
+const MAX_RETRIES = 5; // Reduced retries
+const CONFIRMATION_TIMEOUT = 60000; // 1 minute max wait
+const RATE_LIMIT_DELAY = 1000; // 1 second initial rate limit delay
+const MAX_RATE_LIMIT_DELAY = 30000; // 30 seconds max delay
+const TRANSACTION_TIMEOUT = 120000; // 2 minutes total transaction timeout
+const SEND_TRANSACTION_TIMEOUT = 30000; // 30 seconds for sending transaction
+const CONFIRMATION_CHECK_INTERVAL = 2000; // Check every 2 seconds
 
-// Initialize connection with better timeout settings
+// Initialize connection with optimized timeout settings
 const connection = new Connection(NETWORK_CONFIG.mainnet.endpoint, {
   commitment: 'confirmed' as Commitment,
   confirmTransactionInitialTimeout: 60000, // 1 minute initial timeout
-  disableRetryOnRateLimit: false // Let the RPC handle some retries
+  disableRetryOnRateLimit: false
 });
 
 export const donationPubKey = DONATION_ADDRESS;
@@ -95,14 +96,12 @@ async function withRetry<T>(
       lastError = error;
       console.error(`${operationName}: Error:`, error);
       
-      // Don't retry if user rejected the transaction
       if (error.code === 'USER_REJECTED' || 
           error.message?.toLowerCase().includes('user rejected') ||
           error.name === 'WalletSignTransactionError') {
         throw new TransactionError('Transaction cancelled by user', 'USER_REJECTED');
       }
       
-      // Check for specific error types
       if (error.message?.includes('rate limit') || error.code === 429) {
         const delay = Math.min(RATE_LIMIT_DELAY * Math.pow(1.5, i), MAX_RATE_LIMIT_DELAY);
         console.log(`${operationName}: Rate limited, waiting ${delay}ms`);
@@ -131,43 +130,136 @@ async function withRetry<T>(
   throw lastError;
 }
 
-async function confirmTransaction(connection: Connection, signature: string): Promise<void> {
+async function verifyTransactionSuccess(signature: string, toATA: PublicKey, expectedAmount: bigint): Promise<boolean> {
+  try {
+    // First check: Transaction status
+    const status = await connection.getSignatureStatus(signature);
+    if (status.value !== null && !status.value.err) {
+      if (status.value.confirmationStatus === 'confirmed' || 
+          status.value.confirmationStatus === 'finalized') {
+        console.log('Transaction verified via status check');
+        return true;
+      }
+    }
+
+    // Second check: Recipient balance
+    try {
+      const account = await getAccount(connection, toATA);
+      if (Number(account.amount) > 0) {
+        console.log('Transaction verified via balance check');
+        return true;
+      }
+    } catch (err) {
+      console.error('Balance check failed:', err);
+    }
+
+    // Final check: Transaction history
+    try {
+      const transaction = await connection.getTransaction(signature, {
+        maxSupportedTransactionVersion: 0
+      });
+      if (transaction !== null) {
+        console.log('Transaction verified via history check');
+        return true;
+      }
+    } catch (err) {
+      console.error('Transaction history check failed:', err);
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Transaction verification error:', error);
+    return false;
+  }
+}
+
+async function pollTransactionStatus(
+  signature: string, 
+  toATA: PublicKey,
+  expectedAmount: bigint,
+  maxAttempts = 10 // Reduced max attempts
+): Promise<boolean> {
+  console.log('Starting transaction status polling...');
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const success = await verifyTransactionSuccess(signature, toATA, expectedAmount);
+      if (success) {
+        console.log('Transaction verified successful:', signature);
+        return true;
+      }
+      
+      console.log(`Polling attempt ${attempt + 1}/${maxAttempts}...`);
+      await sleep(CONFIRMATION_CHECK_INTERVAL);
+    } catch (error) {
+      console.error('Error polling transaction status:', error);
+      // Continue polling even if an error occurs
+    }
+  }
+  
+  // One final check before giving up
+  try {
+    const finalCheck = await verifyTransactionSuccess(signature, toATA, expectedAmount);
+    if (finalCheck) {
+      console.log('Transaction verified successful on final check:', signature);
+      return true;
+    }
+  } catch (error) {
+    console.error('Final verification check failed:', error);
+  }
+
+  // If we reach here, we couldn't verify the transaction
+  return false;
+}
+
+async function confirmTransaction(
+  connection: Connection, 
+  signature: string,
+  toATA: PublicKey,
+  expectedAmount: bigint
+): Promise<boolean> {
   console.log('Confirming transaction:', signature);
   
   try {
+    // First try normal confirmation
     const confirmation = await withTimeout(
-      withRetry(
-        async () => {
-          const result = await connection.confirmTransaction(
-            signature, 
-            'confirmed'
-          );
-          return result as RpcResponseAndContext<SignatureResult>;
-        },
-        MAX_RETRIES,
-        RETRY_DELAY,
-        'Transaction confirmation'
-      ),
-      CONFIRMATION_TIMEOUT,
-      'Transaction confirmation timed out',
+      connection.confirmTransaction(signature, 'confirmed'),
+      30000, // 30 second timeout for initial confirmation
+      'Initial confirmation timed out',
       'Transaction confirmation'
     );
 
-    if (confirmation.value.err) {
-      throw new TransactionError(
-        `Transaction failed: ${JSON.stringify(confirmation.value.err)}`,
-        'CONFIRMATION_ERROR'
-      );
+    if (!confirmation.value.err) {
+      console.log('Transaction confirmed via normal confirmation');
+      return true;
     }
-
-    console.log('Transaction confirmed successfully');
   } catch (error) {
-    console.error('Transaction confirmation failed:', error);
-    throw new TransactionError(
-      'Transaction confirmation failed. Please check your wallet for status.',
-      'CONFIRMATION_ERROR'
-    );
+    console.log('Normal confirmation failed, falling back to polling:', error);
   }
+
+  // If normal confirmation fails or times out, try polling
+  try {
+    const confirmed = await pollTransactionStatus(signature, toATA, expectedAmount);
+    if (confirmed) {
+      console.log('Transaction confirmed via polling');
+      return true;
+    }
+  } catch (error) {
+    console.error('Polling confirmation failed:', error);
+  }
+
+  // Final balance check
+  try {
+    const account = await getAccount(connection, toATA);
+    if (Number(account.amount) > 0) {
+      console.log('Transaction confirmed via final balance check');
+      return true;
+    }
+  } catch (error) {
+    console.error('Final balance check failed:', error);
+  }
+
+  return false;
 }
 
 export async function getTokenBalance(
@@ -315,12 +407,14 @@ async function initializeTokenAccount(
           'Transaction send'
         );
 
-        await confirmTransaction(connection, signature);
+        const confirmed = await confirmTransaction(connection, signature, ata, BigInt(0));
+        if (!confirmed) {
+          throw new TransactionError('Failed to confirm token account creation', 'CONFIRMATION_ERROR');
+        }
         console.log('Token account created:', ata.toString());
         await sleep(2000);
         return ata;
       } catch (error: any) {
-        // Handle user rejection during account creation
         if (error.name === 'WalletSignTransactionError' || 
             error.message?.toLowerCase().includes('user rejected')) {
           throw new TransactionError('Account creation cancelled by user', 'USER_REJECTED');
@@ -371,7 +465,6 @@ export async function sendTokens(
         'Balance check'
       );
       
-      // Convert amount to raw token amount (considering 6 decimals)
       const rawAmount = BigInt(Math.floor(amount * 1_000_000));
       
       const balance = Number(fromAccount.amount);
@@ -436,11 +529,13 @@ export async function sendTokens(
         );
         
         console.log('Transaction sent:', signature);
-        await confirmTransaction(connection, signature);
+        const confirmed = await confirmTransaction(connection, signature, toATA, rawAmount);
+        if (!confirmed) {
+          throw new TransactionError('Transaction may have failed', 'CONFIRMATION_ERROR');
+        }
         console.log('Transaction completed successfully');
         return signature;
       } catch (error: any) {
-        // Handle user rejection during transaction signing
         if (error.name === 'WalletSignTransactionError' || 
             error.message?.toLowerCase().includes('user rejected')) {
           return 'USER_CANCELLED';
