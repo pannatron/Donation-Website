@@ -31,7 +31,14 @@ export default function WalletConnectionProvider({ children }: { children: React
 
   return (
     <ConnectionProvider endpoint={endpoint} config={{ commitment: 'confirmed' }}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider 
+        wallets={wallets} 
+        autoConnect
+        onError={(error: Error) => {
+          // Suppress wallet errors from showing as unhandled
+          console.log('Wallet error:', error.message);
+        }}
+      >
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
