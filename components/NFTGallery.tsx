@@ -139,7 +139,7 @@ const NFTGallery: React.FC = () => {
             >
               <div
                 className={`relative w-[400px] h-[500px] rounded-2xl overflow-hidden cursor-pointer transition-transform duration-500 group ${
-                  isHovered ? 'brightness-100' : 'brightness-50'
+                  isHovered ? 'brightness-110' : 'brightness-50'
                 } ${index === 0 ? 'animate-shimmer-gold' : index === 1 ? 'animate-shimmer-silver' : 'animate-shimmer-bronze'}`}
                 onMouseEnter={() => {
                   setHoveredIndex(index);
@@ -156,10 +156,25 @@ const NFTGallery: React.FC = () => {
                   transformStyle: 'preserve-3d'
                 }}
               >
+                {/* Enhanced Glow Effect */}
                 <div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"
+                  className={`absolute inset-0 rounded-2xl blur-2xl transition-all duration-500 ${
+                    isHovered ? 'opacity-80 scale-105 animate-pulse-glow' : 'opacity-0'
+                  }`}
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgba(147, 197, 253, 0.4), rgba(59, 130, 246, 0.4))'
+                  }}
+                />
+
+                {/* Enhanced Shine Effect */}
+                <div 
+                  className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
+                    isHovered ? 'opacity-100 animate-shine-intense' : 'opacity-0 group-hover:opacity-100 animate-shine'
+                  }`}
                   style={{
-                    background: 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.2) 47%, rgba(255, 255, 255, 0.1) 49%, transparent 54%)',
+                    background: isHovered
+                      ? 'linear-gradient(105deg, transparent 35%, rgba(147, 197, 253, 0.4) 40%, rgba(59, 130, 246, 0.5) 42%, rgba(147, 197, 253, 0.4) 44%, transparent 49%)'
+                      : 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.2) 47%, rgba(255, 255, 255, 0.1) 49%, transparent 54%)',
                   }}
                 />
 
@@ -171,7 +186,9 @@ const NFTGallery: React.FC = () => {
                     sizes="400px"
                     quality={90}
                     priority
-                    className="object-cover transition-transform duration-300 group-hover:scale-105 will-change-transform"
+                    className={`object-cover transition-all duration-300 group-hover:scale-105 will-change-transform ${
+                      isHovered ? 'brightness-125 animate-pulse-bright' : ''
+                    }`}
                     loading="eager"
                   />
                 </div>
@@ -237,6 +254,22 @@ const NFTGallery: React.FC = () => {
           50% { box-shadow: 0 0 25px rgba(180, 83, 9, 0.5); }
         }
 
+
+        @keyframes shine-intense {
+          0% { transform: translateX(-200%) rotate(-45deg); }
+          100% { transform: translateX(200%) rotate(-45deg); }
+        }
+
+        @keyframes pulse-bright {
+          0%, 100% { filter: brightness(125%); }
+          50% { filter: brightness(150%); }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
         .animate-shimmer-gold {
           animation: shimmer-gold 2s ease-in-out infinite;
         }
@@ -247,6 +280,22 @@ const NFTGallery: React.FC = () => {
 
         .animate-shimmer-bronze {
           animation: shimmer-bronze 2s ease-in-out infinite;
+        }
+
+        .animate-shine {
+          animation: shine 2s linear infinite;
+        }
+
+        .animate-shine-intense {
+          animation: shine-intense 1.5s linear infinite;
+        }
+
+        .animate-pulse-bright {
+          animation: pulse-bright 2s ease-in-out infinite;
+        }
+
+        .animate-pulse-glow {
+          animation: pulse-glow 4s ease-in-out infinite;
         }
       `}</style>
     </div>
