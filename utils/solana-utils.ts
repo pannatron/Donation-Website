@@ -1,33 +1,111 @@
-import { Connection, Commitment } from '@solana/web3.js';
+import { Connection, Commitment, PublicKey, RpcResponseAndContext, SignatureStatus, SendOptions } from '@solana/web3.js';
 import { NETWORK_CONFIG } from '../config/constants';
 import { toast } from 'react-hot-toast';
 
 // Timeout and retry constants
-export const RETRY_DELAY = 500; // 0.5 second initial delay
-export const MAX_RETRIES = 5; // Reduced retries
-export const CONFIRMATION_TIMEOUT = 60000; // 1 minute max wait
-export const RATE_LIMIT_DELAY = 1000; // 1 second initial rate limit delay
-export const MAX_RATE_LIMIT_DELAY = 30000; // 30 seconds max delay
-export const TRANSACTION_TIMEOUT = 120000; // 2 minutes total transaction timeout
-export const SEND_TRANSACTION_TIMEOUT = 30000; // 30 seconds for sending transaction
-export const CONFIRMATION_CHECK_INTERVAL = 2000; // Check every 2 seconds
+export const RETRY_DELAY = 1000;
+export const MAX_RETRIES = 10;
+export const CONFIRMATION_TIMEOUT = 120000;
+export const RATE_LIMIT_DELAY = 2000;
+export const MAX_RATE_LIMIT_DELAY = 60000;
+export const TRANSACTION_TIMEOUT = 180000;
+export const SEND_TRANSACTION_TIMEOUT = 60000;
+export const CONFIRMATION_CHECK_INTERVAL = 3000;
 
-// Initialize connection with optimized timeout settings
-export const connection = new Connection(NETWORK_CONFIG.mainnet.endpoint, {
-  commitment: 'confirmed' as Commitment,
-  confirmTransactionInitialTimeout: 60000, // 1 minute initial timeout
-  disableRetryOnRateLimit: false
-});
+// Enhanced Connection with HTTP-only operations
+export class EnhancedConnection {
+  private connection: Connection;
+
+  constructor(endpoint: string) {
+    // Create connection with HTTP-only configuration
+    this.connection = new Connection(endpoint, {
+      commitment: 'confirmed' as Commitment,
+      confirmTransactionInitialTimeout: 120000,
+      disableRetryOnRateLimit: false,
+      wsEndpoint: undefined // ปิด WebSocket เพื่อป้องกัน ping
+    });
+  }
+
+  async confirmTransaction(...args: Parameters<Connection['confirmTransaction']>) {
+    const [signature, commitment] = args;
+    let attempts = 0;
+    const maxAttempts = 40;
+
+    while (attempts < maxAttempts) {
+      try {
+        // ใช้เฉพาะ HTTP polling
+        const status = await this.connection.getSignatureStatus(signature);
+        
+        if (status?.value?.confirmationStatus === commitment || 
+            status?.value?.confirmationStatus === 'finalized') {
+          return {
+            context: { slot: 0 },
+            value: status.value
+          };
+        }
+      } catch (error) {
+        console.warn('Confirmation check failed:', error);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      attempts++;
+    }
+
+    throw new Error('Transaction confirmation timeout');
+  }
+
+  async getSignatureStatus(...args: Parameters<Connection['getSignatureStatus']>) {
+    return await this.connection.getSignatureStatus(...args);
+  }
+
+  async getParsedTokenAccountsByOwner(...args: Parameters<Connection['getParsedTokenAccountsByOwner']>) {
+    return await this.connection.getParsedTokenAccountsByOwner(...args);
+  }
+
+  async getTransaction(...args: Parameters<Connection['getTransaction']>) {
+    return await this.connection.getTransaction(...args);
+  }
+
+  async getParsedTransaction(...args: Parameters<Connection['getParsedTransaction']>) {
+    return await this.connection.getParsedTransaction(...args);
+  }
+
+  async getAccountInfo(...args: Parameters<Connection['getAccountInfo']>) {
+    return await this.connection.getAccountInfo(...args);
+  }
+
+  async getLatestBlockhash(...args: Parameters<Connection['getLatestBlockhash']>) {
+    return await this.connection.getLatestBlockhash(...args);
+  }
+
+  async sendRawTransaction(transaction: Buffer, options?: SendOptions) {
+    return await this.connection.sendRawTransaction(transaction, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+      maxRetries: 5,
+      ...options
+    });
+  }
+
+  async getSignaturesForAddress(...args: Parameters<Connection['getSignaturesForAddress']>) {
+    return await this.connection.getSignaturesForAddress(...args);
+  }
+
+  async getParsedAccountInfo(...args: Parameters<Connection['getParsedAccountInfo']>) {
+    return await this.connection.getParsedAccountInfo(...args);
+  }
+}
+
+// Create connection instance
+export const connection = new EnhancedConnection(NETWORK_CONFIG.mainnet.endpoint);
 
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Enhanced helper function to check if an error is a user rejection
 export function isUserRejectionError(error: any): boolean {
   if (!error) return false;
   
-  // Common rejection patterns across different wallets
   const rejectionPatterns = [
     'user rejected',
     'rejected the request',
@@ -44,10 +122,9 @@ export function isUserRejectionError(error: any): boolean {
     'wallet disconnected'
   ];
 
-  // Check various conditions that indicate user rejection
   return (
-    error.code === 4001 || // Standard wallet rejection code
-    error.code === -32603 || // Phantom wallet internal error code
+    error.code === 4001 || 
+    error.code === -32603 || 
     error.code === 'USER_REJECTED' ||
     error.name === 'WalletSignTransactionError' ||
     error.name === 'WalletConnectionError' ||
@@ -62,7 +139,6 @@ export class TransactionError extends Error {
     super(message);
     this.name = 'TransactionError';
     
-    // Only show toast for actual errors, not user actions or warnings
     if (!['USER_REJECTED', 'USER_CANCELLED'].includes(code || '') && 
         !isUserRejectionError({ message, code })) {
       toast.error(message);
@@ -85,7 +161,6 @@ export async function withTimeout<T>(
     }
   };
 
-  // Immediately wrap the input promise to catch rejections
   const wrappedPromise = promise.catch(error => {
     if (isUserRejectionError(error)) {
       console.log(`${operationName}: User rejected the transaction`);
@@ -94,7 +169,6 @@ export async function withTimeout<T>(
     throw error;
   });
 
-  // Create a promise that rejects on timeout
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutId = setTimeout(() => {
       cleanup();
@@ -103,16 +177,10 @@ export async function withTimeout<T>(
   });
 
   try {
-    // Race between the wrapped promise and timeout
     const result = await Promise.race([wrappedPromise, timeoutPromise]);
     cleanup();
     
-    if (result === null) {
-      console.log(`${operationName}: Operation returned null`);
-      return null;
-    }
-    
-    return result;
+    return result === undefined ? null : result;
   } catch (error: any) {
     cleanup();
     
@@ -145,18 +213,15 @@ export async function withRetry<T>(
   baseDelay = RETRY_DELAY,
   operationName = 'Operation'
 ): Promise<T | null> {
-  let lastError;
+  let lastError: any;
+  let currentDelay = baseDelay;
   
   for (let i = 0; i < retries; i++) {
     try {
       console.log(`${operationName}: Attempt ${i + 1}/${retries}`);
       const result = await operation();
       
-      // Handle null result explicitly
-      if (result === null) {
-        console.log(`${operationName}: Operation returned null (likely user rejection)`);
-        return null;
-      }
+      if (result === undefined) return null;
       
       console.log(`${operationName}: Success`);
       return result;
@@ -164,41 +229,37 @@ export async function withRetry<T>(
       lastError = error;
       console.error(`${operationName}: Error:`, error);
       
-      // Check for user rejection - immediately return null
       if (isUserRejectionError(error)) {
         console.log(`${operationName}: User rejected`);
         return null;
       }
       
-      // Handle rate limits
       if (error.message?.includes('rate limit') || error.code === 429) {
-        const delay = Math.min(RATE_LIMIT_DELAY * Math.pow(1.5, i), MAX_RATE_LIMIT_DELAY);
-        console.log(`${operationName}: Rate limited, waiting ${delay}ms`);
-        await sleep(delay);
+        currentDelay = Math.min(currentDelay * 2, MAX_RATE_LIMIT_DELAY);
+        console.log(`${operationName}: Rate limited, waiting ${currentDelay}ms`);
+        await sleep(currentDelay);
         continue;
       }
 
-      // Handle expired blockhash
       if (error.message?.includes('blockhash not found') || error.code === 404) {
-        console.log(`${operationName}: Blockhash expired, retrying immediately`);
+        console.log(`${operationName}: Blockhash expired, retrying with minimal delay`);
+        await sleep(1000);
         continue;
       }
 
-      // Final attempt failed
       if (i === retries - 1) {
         console.log(`${operationName}: All attempts failed`);
         throw new TransactionError(
-          `Operation failed: ${error.message}`,
+          `Operation failed after ${retries} attempts: ${error.message}`,
           error.code || 'OPERATION_FAILED'
         );
       }
 
-      // Calculate backoff delay
-      const delay = Math.min(baseDelay * Math.pow(1.5, i), MAX_RATE_LIMIT_DELAY);
-      console.log(`${operationName}: Retrying in ${delay}ms...`);
-      await sleep(delay);
+      currentDelay = Math.min(currentDelay * 1.5, MAX_RATE_LIMIT_DELAY);
+      console.log(`${operationName}: Retrying in ${currentDelay}ms...`);
+      await sleep(currentDelay);
     }
   }
   
-  throw lastError;
+  return null;
 }
