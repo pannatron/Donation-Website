@@ -73,7 +73,11 @@ export const EventWidget = () => {
       className={`fixed transition-all duration-300 ease-in-out w-80 rounded-2xl bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)] animate-float hover:border-purple-400/50 ${isExpanded ? 'h-[85vh]' : 'h-auto'} ${
         isWalletActive 
           ? 'top-40 pointer-events-none' 
+<<<<<<< HEAD
           : 'top-20 z-20'
+=======
+          : 'top-25 z-10'
+>>>>>>> f88d833 (fix : add   Rewards will be distributed at a later stage.)
       }`}
       style={{ right: '3.75rem' }}
     >
@@ -178,14 +182,22 @@ export const EventWidget = () => {
           </div>
 
           {/* Info Text */}
-          <div className="text-xs text-center text-purple-300/80 mt-auto mb-2">
-            Discover exclusive NFT benefits and ecosystem rewards
+          <div className="mt-auto space-y-2">
+            <div className="text-sm text-center font-medium bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Rewards will be distributed at a later stage.
+              <br />
+              This is not the final milestone
+               additional milestones will follow.
+            </div>
+            <div className="text-xs text-center text-purple-300/80">
+              Discover exclusive NFT benefits and ecosystem rewards
+            </div>
           </div>
 
           {/* Learn More Button - Always visible at the bottom */}
           <Link
             href="/nft"
-            className="pointer-events-auto block w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 py-2 px-3 rounded-xl hover:from-purple-500/40 hover:to-pink-500/40 transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] text-sm font-medium text-center group cursor-pointer hover:text-purple-200"
+            className="pointer-events-auto block w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 py-2 px-3 rounded-xl hover:from-purple-500/40 hover:to-pink-500/40 transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] text-sm font-medium text-center group cursor-pointer hover:text-purple-200 mt-2"
           >
             <span className="group-hover:animate-pulse">Learn more about rewards & NFT</span>
           </Link>
