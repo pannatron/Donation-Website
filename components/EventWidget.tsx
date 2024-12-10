@@ -73,16 +73,7 @@ export const EventWidget = () => {
       className={`fixed transition-all duration-300 ease-in-out w-80 rounded-2xl bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)] animate-float hover:border-purple-400/50 ${isExpanded ? 'h-[85vh]' : 'h-auto'} ${
         isWalletActive 
           ? 'top-40 pointer-events-none' 
-<<<<<<< HEAD
-<<<<<<< HEAD
-          : 'top-20 z-20'
-=======
-          : 'top-25 z-10'
->>>>>>> f88d833 (fix : add   Rewards will be distributed at a later stage.)
-=======
-          : 'top-25 z-10'
->>>>>>> recovery-branch
-      }`}
+          : 'top-25 z-20'}`}
       style={{ right: '8.75rem' }}
     >
       {/* Content Container */}
