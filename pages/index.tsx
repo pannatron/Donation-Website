@@ -65,7 +65,20 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl font-bold mb-6 animate-float">Khaitun Ecosystem Donation</h1>
+          <h1 
+            className="text-4xl md:text-5xl font-bold mb-4"
+            style={{
+              background: 'linear-gradient(90deg, #ffffff 0%, #a78bfa 25%, #ffffff 50%, #818cf8 75%, #ffffff 100%)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              animation: 'shine 8s linear infinite',
+              textShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
+            }}
+          >
+            Khaitun Ecosystem Donation
+          </h1>
           <p className="text-xl text-gray-300 mb-8">Support the future of decentralized finance</p>
 
           <DonationAddress />

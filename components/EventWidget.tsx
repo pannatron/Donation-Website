@@ -74,12 +74,16 @@ export const EventWidget = () => {
         isWalletActive 
           ? 'top-40 pointer-events-none' 
 <<<<<<< HEAD
+<<<<<<< HEAD
           : 'top-20 z-20'
 =======
           : 'top-25 z-10'
 >>>>>>> f88d833 (fix : add   Rewards will be distributed at a later stage.)
+=======
+          : 'top-25 z-10'
+>>>>>>> recovery-branch
       }`}
-      style={{ right: '3.75rem' }}
+      style={{ right: '8.75rem' }}
     >
       {/* Content Container */}
       <div className={`relative p-4 rounded-2xl h-full ${isWalletActive ? 'pointer-events-auto' : ''}`}>

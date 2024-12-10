@@ -31,6 +31,168 @@ body {
   @apply bg-gray-900 border border-purple-500;
 }
 
+/* Enhanced Golden Particle Animation */
+@keyframes floatUpwards {
+  0% {
+    transform: translate(var(--startX), var(--startY)) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--endX), var(--endY)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+.golden-particle {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 215, 0, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: floatUpwards var(--duration) ease-out forwards;
+  filter: blur(1px);
+  box-shadow: 
+    0 0 15px 3px rgba(255, 215, 0, 0.5),
+    0 0 30px 6px rgba(255, 215, 0, 0.3),
+    0 0 45px 9px rgba(255, 215, 0, 0.1);
+  z-index: 10;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.golden-particle::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  background: inherit;
+  border-radius: inherit;
+  filter: blur(3px);
+  opacity: 0.6;
+}
+
+.golden-particle::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.9) 0%, rgba(255, 215, 0, 0) 70%);
+  border-radius: inherit;
+  filter: blur(0px);
+  opacity: 1;
+}
+
+/* Enhanced Silver Reflection Animation */
+@keyframes silverShine {
+  0%, 100% {
+    opacity: 0;
+    transform: translateX(-150%) skewX(-15deg);
+  }
+  25%, 75% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(150%) skewX(-15deg);
+  }
+}
+
+.silver-reflection {
+  position: relative;
+  overflow: hidden;
+}
+
+.silver-reflection::before {
+  content: '';
+  position: absolute;
+  top: -150%;
+  left: -150%;
+  width: 400%;
+  height: 400%;
+  background: linear-gradient(
+    45deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.15) 40%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 60%,
+    transparent 80%
+  );
+  animation: silverShine 2s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.silver-reflection::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
+  opacity: 0.7;
+  z-index: 1;
+}
+
+/* NFT Card Glow Effect */
+.nft-card-glow {
+  position: relative;
+  box-shadow:
+    0 0 25px 5px rgba(255, 215, 0, 0.2),
+    0 0 50px 10px rgba(138, 92, 246, 0.2),
+    0 0 75px 15px rgba(255, 215, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.nft-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 215, 0, 0.1) 20%,
+    rgba(138, 92, 246, 0.2) 50%,
+    rgba(255, 215, 0, 0.1) 80%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+.nft-card-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 215, 0, 0.5),
+    rgba(138, 92, 246, 0.5)
+  );
+  filter: blur(15px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.nft-card-glow:hover::after {
+  opacity: 0.5;
+}
+
+.brightness-40 {
+  filter: brightness(0.4) contrast(1.2);
+}
+
+.brightness-100 {
+  filter: brightness(1);
+}
+
 /* Animation classes */
 @keyframes pulse {
   0%, 100% {
@@ -113,7 +275,6 @@ body {
 }
 
 .progress-tiger::before,
-
 .progress-tiger::before {
   background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
   animation: glowPulse 2s ease-in-out infinite;

@@ -7,12 +7,10 @@ const nextConfig = {
       config.optimization = {
         ...config.optimization,
         splitChunks: false,
-      }
+      };
     }
-    return config
+    return config;
   },
-  // Disable error overlay
-  onError: () => {},
   // Disable React error overlay
   devIndicators: {
     buildActivity: false,
@@ -23,7 +21,7 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
-}
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

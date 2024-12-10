@@ -4,7 +4,10 @@ import {
   TransactionSignature,
   RpcResponseAndContext,
   SignatureResult,
-  ParsedAccountData
+  ParsedAccountData,
+  ParsedTransactionWithMeta,
+  ParsedInstruction,
+  VersionedTransactionResponse
 } from '@solana/web3.js';
 import { 
   TOKEN_PROGRAM_ID, 
@@ -287,12 +290,12 @@ async function initializeTokenAccount(
         const signature = await withTimeout(
           withRetry(
             async () => {
-              const sig = await connection.sendRawTransaction(signedTransaction.serialize(), {
+              const sig: TransactionSignature = await connection.sendRawTransaction(signedTransaction.serialize(), {
                 skipPreflight: false,
                 preflightCommitment: 'confirmed',
                 maxRetries: 3
               });
-              return sig as TransactionSignature;
+              return sig;
             },
             MAX_RETRIES,
             RETRY_DELAY,
@@ -389,73 +392,101 @@ async function getDonationProgress(): Promise<number> {
   }
 }
 
-async function getDonorRankings(): Promise<Array<{ address: string; amount: number }>> {
+interface DonorRanking {
+  address: string;
+  amount: number;
+}
+
+async function getDonorRankings(): Promise<Array<DonorRanking>> {
   try {
     console.log('Fetching donor rankings...');
     
-    // Get the ATA for the donation address
     const donationATA = await getAssociatedTokenAddress(
       new PublicKey(KT_TOKEN_ADDRESS),
       new PublicKey(DONATION_ADDRESS)
     );
 
-    // Get signatures for all transactions to the donation ATA
-    const signatures = await connection.getSignaturesForAddress(
-      donationATA,
-      { limit: 1000 }
-    );
-
-    // Track donations by address
+    // Initialize donations map
     const donations: { [key: string]: number } = {};
+    
+    // Get all signatures using pagination
+    let allSignatures = [];
+    let lastSignature = null;
+    
+    while (true) {
+      const options: any = { limit: 1000 };
+      if (lastSignature) {
+        options.before = lastSignature;
+      }
+      
+      const signatures = await connection.getSignaturesForAddress(donationATA, options);
+      
+      if (signatures.length === 0) {
+        break;
+      }
+      
+      allSignatures.push(...signatures);
+      lastSignature = signatures[signatures.length - 1].signature;
+      
+      // Add delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
-    // Process each transaction
-    for (const sig of signatures) {
-      try {
-        const tx = await connection.getParsedTransaction(sig.signature, {
-          maxSupportedTransactionVersion: 0
-        });
+    console.log(`Total signatures found: ${allSignatures.length}`);
 
+    // Process transactions in batches
+    const BATCH_SIZE = 25;
+    for (let i = 0; i < allSignatures.length; i += BATCH_SIZE) {
+      const batch = allSignatures.slice(i, i + BATCH_SIZE);
+      
+      // Fetch transactions in parallel
+      const transactions = await Promise.all(
+        batch.map(async (sig) => {
+          return await connection.getParsedTransaction(sig.signature, {
+            maxSupportedTransactionVersion: 0
+          });
+        })
+      );
+
+      // Process batch of transactions
+      for (const tx of transactions) {
         if (!tx?.meta || !tx.transaction.message.instructions) continue;
 
-        // Look for token transfer instructions
         for (const instruction of tx.transaction.message.instructions) {
-          const parsed = instruction as any;
+          const parsed = instruction as ParsedInstruction;
           
-          // Check for both transfer and transferChecked instructions
           if (
             parsed?.program === 'spl-token' && 
             (parsed?.parsed?.type === 'transfer' || parsed?.parsed?.type === 'transferChecked') &&
             parsed?.parsed?.info?.destination === donationATA.toString()
           ) {
-            // For transfer instructions, verify the mint separately
-            if (parsed.parsed.type === 'transfer') {
-              const sourceAccount = await connection.getParsedAccountInfo(new PublicKey(parsed.parsed.info.source));
-              const sourceData = (sourceAccount.value?.data as ParsedAccountData).parsed;
-              if (sourceData.info.mint !== KT_TOKEN_ADDRESS) continue;
-            }
-            // For transferChecked, the mint is already verified in the instruction
-            else if (parsed.parsed.info.mint !== KT_TOKEN_ADDRESS) {
+            // For transferChecked, verify mint
+            if (parsed.parsed.type === 'transferChecked' && parsed.parsed.info.mint !== KT_TOKEN_ADDRESS) {
               continue;
             }
 
             const fromAddress = parsed.parsed.info.authority;
             const amount = parsed.parsed.info.tokenAmount?.uiAmount || 
-                          parsed.parsed.info.amount / Math.pow(10, 6); // Convert raw amount if needed
+                          Number(parsed.parsed.info.amount) / Math.pow(10, 6);
 
-            // Add to donor's total
-            donations[fromAddress] = (donations[fromAddress] || 0) + amount;
+            if (!donations[fromAddress]) {
+              donations[fromAddress] = 0;
+            }
+            donations[fromAddress] += amount;
           }
         }
-      } catch (error) {
-        console.error('Error processing transaction:', error);
-        continue;
       }
+
+      // Add delay between batches to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Convert to array and sort by amount
-    return Object.entries(donations)
+    const rankings = Object.entries(donations)
       .map(([address, amount]) => ({ address, amount }))
       .sort((a, b) => b.amount - a.amount);
+
+    return rankings;
 
   } catch (error) {
     console.error('Error getting donor rankings:', error);
@@ -548,12 +579,12 @@ async function sendTokens(
     const signature = await withTimeout(
       withRetry(
         async () => {
-          const sig = await connection.sendRawTransaction(signedTransaction.serialize(), {
+          const sig: TransactionSignature = await connection.sendRawTransaction(signedTransaction.serialize(), {
             skipPreflight: false,
             preflightCommitment: 'confirmed',
             maxRetries: 3
           });
-          return sig as TransactionSignature;
+          return sig;
         },
         MAX_RETRIES,
         RETRY_DELAY,
