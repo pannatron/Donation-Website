@@ -22,6 +22,6 @@ jobs:
     # Pull latest code and update application
     - name: Update and restart application
       run: |
-        npm install
+        npm install -f
         npm run build
         pm2 start npm --name "donation-website" -- start
