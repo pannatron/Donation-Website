@@ -465,14 +465,26 @@ async function getDonorRankings(): Promise<Array<DonorRanking>> {
               continue;
             }
 
-            const fromAddress = parsed.parsed.info.authority;
+            // Use source address instead of authority
+            const sourceAddress = parsed.parsed.info.source;
             const amount = parsed.parsed.info.tokenAmount?.uiAmount || 
                           Number(parsed.parsed.info.amount) / Math.pow(10, 6);
 
-            if (!donations[fromAddress]) {
-              donations[fromAddress] = 0;
+            // Get the owner of the source token account
+            try {
+              const sourceAccountInfo = await connection.getParsedAccountInfo(new PublicKey(sourceAddress));
+              if (sourceAccountInfo.value && 'parsed' in sourceAccountInfo.value.data) {
+                const parsedData = sourceAccountInfo.value.data as ParsedAccountData;
+                const ownerAddress = parsedData.parsed.info.owner;
+
+                if (!donations[ownerAddress]) {
+                  donations[ownerAddress] = 0;
+                }
+                donations[ownerAddress] += amount;
+              }
+            } catch (error) {
+              console.error('Error getting source account owner:', error);
             }
-            donations[fromAddress] += amount;
           }
         }
       }
