@@ -8,8 +8,8 @@ export const DonationRanking = React.memo(() => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { publicKey } = useWallet();
 
-  // Updated base classes for better mobile responsiveness
-  const baseClasses = "xl:fixed xl:-top-15 xl:-left-10 relative mx-4 xl:mx-0 z-20 w-auto xl:w-80 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-2xl p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all duration-500 ease-out transform animate-float";
+  // Removed mx-4 from mobile view to match SpecialRewards width
+  const baseClasses = "xl:fixed xl:-top-15 xl:-left-8 relative xl:mx-0 z-20 w-full xl:w-80 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-2xl p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all duration-500 ease-out transform animate-float";
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

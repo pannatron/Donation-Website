@@ -54,7 +54,7 @@ export default function Home() {
       <SocialLinks />
       
       {/* Main Layout Container */}
-      <div className="pt-20 pb-12">
+      <div className="pt-20 pb-24">
         <div className="max-w-[1700px] mx-auto px-4 sm:px-6">
           {/* Grid Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-8">
@@ -67,8 +67,8 @@ export default function Home() {
                     <DonationRanking />
                   </div>
                 </div>
-                {/* Special Rewards */}
-                <div className="mt-[380px] -ml-10 scale-[1] origin-top">
+                {/* Special Rewards - Increased gap in mobile */}
+                <div className="mt-12 xl:mt-[380px] xl:-ml-10">
                   <SpecialRewards />
                 </div>
               </div>
@@ -134,7 +134,10 @@ export default function Home() {
                   </div>
                 )}
 
-                <Milestones currentAmount={currentAmount} />
+                {/* Increased gap before Milestones in mobile */}
+                <div className="mt-12 xl:mt-8">
+                  <Milestones currentAmount={currentAmount} />
+                </div>
               </div>
             </div>
 
