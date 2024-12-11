@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { donationPubKey } from '../utils/solana-transactions';
 
 export const DonationAddress = () => {
   const [showCopied, setShowCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const donationAddress = donationPubKey;
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const copyAddress = async () => {
+    if (!mounted) return;
+    
     try {
-      await navigator.clipboard.writeText(donationAddress);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(donationAddress);
+      } else {
+        // Fallback copy mechanism
+        const textArea = document.createElement('textarea');
+        textArea.value = donationAddress;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setShowCopied(true);
       setTimeout(() => setShowCopied(false), 2000);
     } catch (err) {
