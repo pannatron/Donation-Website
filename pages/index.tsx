@@ -58,7 +58,7 @@ export default function Home() {
         <div className="fixed left-[35px] top-0 z-50">
           <DonationRanking />
         </div>
-        <div className="fixed top-[580px] left-[30px] z-20">
+        <div className="fixed top-[540px] left-[30px] z-20">
           <SpecialRewards />
         </div>
         <EventWidget />
