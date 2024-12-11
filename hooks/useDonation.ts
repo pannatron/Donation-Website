@@ -21,19 +21,20 @@ export const useDonation = () => {
   }, [connected]);
 
   const fetchBalances = useCallback(async () => {
-    if (connected && publicKey) {
-      try {
-        const [balance, progress] = await Promise.all([
-          getTokenBalance(publicKey.toString()),
-          getDonationProgress()
-        ]);
+    try {
+      // Always fetch donation progress regardless of wallet connection
+      const progress = await getDonationProgress();
+      setCurrentAmount(progress);
+
+      // Only fetch user balance if wallet is connected
+      if (connected && publicKey) {
+        const balance = await getTokenBalance(publicKey.toString());
         setUserBalance(balance);
-        setCurrentAmount(progress);
-      } catch (err) {
-        console.error('Error fetching balances:', err);
+      } else {
+        setUserBalance(0);
       }
-    } else {
-      setUserBalance(0);
+    } catch (err) {
+      console.error('Error fetching balances:', err);
     }
   }, [connected, publicKey]);
 
