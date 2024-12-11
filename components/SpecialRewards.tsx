@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { FC } from 'react';
 
-export const SpecialRewards = React.memo(() => {
+export const SpecialRewards: FC = React.memo(() => {
   return (
-    <div className="w-[280px] -mt-24 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] transition-all duration-300 animate-float scale-[0.85] sm:scale-100 origin-top-left">
+    <div className="relative mx-4 xl:mx-0 w-auto xl:w-80 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25)] transition-all duration-300 animate-float xl:scale-100">
       <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-gradient"></div>
       <div className="shimmer-wrapper">
         <div className="shimmer"></div>
@@ -89,21 +89,10 @@ export const SpecialRewards = React.memo(() => {
       <style jsx>{`
         @keyframes float {
           0%, 100% {
-            transform: translateY(0) scale(0.85);
+            transform: translateY(0);
           }
           50% {
-            transform: translateY(-10px) scale(0.85);
-          }
-        }
-
-        @media (min-width: 640px) {
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0) scale(1);
-            }
-            50% {
-              transform: translateY(-10px) scale(1);
-            }
+            transform: translateY(-10px);
           }
         }
 

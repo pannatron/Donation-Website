@@ -33,7 +33,6 @@ export const EventWidget = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Add event listeners for wallet panel interactions
   useEffect(() => {
     const handleWalletClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -41,17 +40,14 @@ export const EventWidget = () => {
       const walletDropdown = target.closest('.wallet-adapter-dropdown');
       const walletList = target.closest('.wallet-adapter-dropdown-list');
       
-      // If clicking wallet button or dropdown, set active
       if (walletButton || walletDropdown) {
         setIsWalletActive(true);
       } 
-      // If clicking outside wallet components, set inactive
       else if (!walletList) {
         setIsWalletActive(false);
       }
     };
 
-    // Handle escape key to close wallet panel
     const handleEscKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsWalletActive(false);
@@ -61,22 +57,26 @@ export const EventWidget = () => {
     document.addEventListener('click', handleWalletClick);
     document.addEventListener('keydown', handleEscKey);
 
-    // Cleanup
     return () => {
       document.removeEventListener('click', handleWalletClick);
       document.removeEventListener('keydown', handleEscKey);
     };
   }, []);
 
+  const baseClasses = `
+    w-full xl:w-80 xl:fixed xl:right-8 xl:top-25
+    rounded-2xl bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 
+    backdrop-blur-md border border-purple-500/30 
+    shadow-[0_0_15px_rgba(168,85,247,0.15)] 
+    transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)] 
+    animate-float hover:border-purple-400/50
+    transition-all duration-300 ease-in-out
+    ${isExpanded ? 'xl:h-[85vh]' : 'h-auto'}
+    ${isWalletActive ? 'xl:top-40 pointer-events-none' : 'z-20'}
+  `;
+
   return (
-    <div 
-      className={`fixed transition-all duration-300 ease-in-out w-80 rounded-2xl bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(168,85,247,0.3)] animate-float hover:border-purple-400/50 ${isExpanded ? 'h-[85vh]' : 'h-auto'} ${
-        isWalletActive 
-          ? 'top-40 pointer-events-none' 
-          : 'top-25 z-50'}`}
-      style={{ right: '1.75rem' }}
-    >
-      {/* Content Container */}
+    <div className={baseClasses}>
       <div className={`relative p-4 rounded-2xl h-full ${isWalletActive ? 'pointer-events-auto' : ''}`}>
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -112,7 +112,7 @@ export const EventWidget = () => {
             />
           </div>
 
-          {/* Top 3 Rewards - Always Visible */}
+          {/* Top 3 Rewards */}
           <div className="space-y-2 mb-6">
             <div className="bg-gradient-to-r from-yellow-900/30 to-yellow-700/30 p-2.5 rounded-xl animate-shimmer-gold relative overflow-hidden hover:from-yellow-900/40 hover:to-yellow-700/40 transition-colors duration-300">
               <div className="text-yellow-400 font-bold flex items-center justify-between">
@@ -137,10 +137,9 @@ export const EventWidget = () => {
             </div>
           </div>
 
-          {/* Expanded Content with Scroll */}
+          {/* Expanded Content */}
           <div className={`overflow-y-auto custom-scrollbar transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[calc(100%-440px)]' : 'max-h-0'}`}>
             <div className="space-y-2">
-              {/* Special Edition Note */}
               <div className="bg-gradient-to-r from-pink-800/30 to-purple-800/30 p-2.5 rounded-xl animate-shimmer-special relative overflow-hidden hover:from-pink-800/40 hover:to-purple-800/40 transition-colors duration-300">
                 <div className="text-pink-300 font-medium">
                   🏆 Top 50 donors will receive a special edition 3D Printed Khaitun
@@ -167,7 +166,6 @@ export const EventWidget = () => {
                 </div>
               </div>
 
-              {/* Random Rewards Note */}
               <div className="bg-gradient-to-r from-indigo-800/30 to-violet-800/30 p-2.5 rounded-xl animate-shimmer-random relative overflow-hidden mt-2 hover:from-indigo-800/40 hover:to-violet-800/40 transition-colors duration-300">
                 <div className="text-indigo-300 font-medium">
                   🎲 Ranks 51-500 will have a chance to win 30 special rewards
@@ -189,7 +187,7 @@ export const EventWidget = () => {
             </div>
           </div>
 
-          {/* Learn More Button - Always visible at the bottom */}
+          {/* Learn More Button */}
           <Link
             href="/nft"
             className="pointer-events-auto block w-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 py-2 px-3 rounded-xl hover:from-purple-500/40 hover:to-pink-500/40 transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.25)] text-sm font-medium text-center group cursor-pointer hover:text-purple-200 mt-2"

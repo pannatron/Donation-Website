@@ -59,8 +59,8 @@ export const Navigation = () => {
           </div>
         </div>
 
-        {/* Wallet Button */}
-        <div className="fixed right-8 top-4 lg:right-15">
+        {/* Wallet Button - Adjusted for mobile */}
+        <div className="lg:fixed lg:right-8 lg:top-4 absolute right-4 top-4">
           <WalletMultiButton className="!bg-purple-600 hover:!bg-purple-700 !text-sm !px-4 !py-2" />
         </div>
       </div>
