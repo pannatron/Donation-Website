@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "next build && next export",
+    "serve": "node server.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -14,9 +16,14 @@
     "@metamask/providers": "^18.2.0",
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.8",
+    "@solana/wallet-adapter-base": "0.9.20",
+    "@solana/wallet-adapter-react": "0.15.30",
+    "@solana/wallet-adapter-react-ui": "0.9.29",
+    "@solana/wallet-adapter-wallets": "0.19.15",
     "@types/gsap": "^1.20.2",
     "chart.js": "^4.4.7",
     "ethers": "^6.13.4",
+    "express": "^4.21.2",
     "framer-motion": "^11.13.1",
     "gsap": "^3.12.5",
     "next": "15.0.3",
@@ -26,10 +33,6 @@
     "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
-    "@solana/wallet-adapter-base": "^0.9.23",
-    "@solana/wallet-adapter-react": "^0.15.35",
-    "@solana/wallet-adapter-react-ui": "^0.9.35",
-    "@solana/wallet-adapter-wallets": "^0.19.32",
     "@types/node": "^20.17.9",
     "@types/react": "^18.3.13",
     "@types/react-dom": "^18",

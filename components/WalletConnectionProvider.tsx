@@ -10,7 +10,7 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 
 export default function WalletConnectionProvider({ children }: { children: React.ReactNode }) {
   // Set network to mainnet
-  const network = WalletAdapterNetwork.MainnetBeta;
+  const network = WalletAdapterNetwork.Mainnet;
   
   // Use our configured RPC endpoint
   const endpoint = NETWORK_CONFIG.mainnet.endpoint;

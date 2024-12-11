@@ -7,9 +7,25 @@ export const DonationAddress = () => {
 
   const copyAddress = async () => {
     try {
-      await navigator.clipboard.writeText(donationAddress);
-      setShowCopied(true);
-      setTimeout(() => setShowCopied(false), 2000);
+      if (typeof window !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(donationAddress);
+        setShowCopied(true);
+        setTimeout(() => setShowCopied(false), 2000);
+      } else {
+        // Fallback for environments where clipboard API is not available
+        const textArea = document.createElement('textarea');
+        textArea.value = donationAddress;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          setShowCopied(true);
+          setTimeout(() => setShowCopied(false), 2000);
+        } catch (err) {
+          console.error('Fallback: Copying failed', err);
+        }
+        document.body.removeChild(textArea);
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
     }

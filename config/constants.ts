@@ -28,14 +28,13 @@ export const MILESTONES = [
   },
 ] as const;
 
-if (!process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL) {
-  throw new Error('NEXT_PUBLIC_ALCHEMY_RPC_URL environment variable is not set');
-}
+// Fallback to public RPC if environment variable is not set
+const RPC_URL = process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 
 export const NETWORK_CONFIG = {
   mainnet: {
     name: 'mainnet-beta' as const,
-    endpoint: process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL
+    endpoint: RPC_URL
   }
 };
 

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     // Disable error overlay in development
     if (!isServer) {
       config.optimization = {
@@ -22,6 +22,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Configure images
+  images: {
+    unoptimized: true,
+  }
 };
 
 module.exports = nextConfig;
