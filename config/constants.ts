@@ -39,7 +39,7 @@ export const NETWORK_CONFIG = {
 };
 
 export const UI_CONFIG = {
-  refreshInterval: 60000, // 10 seconds
+  refreshInterval: 10000, // 10 seconds
   animationDuration: 1000, // 1 second
   maxDecimals: 1
 };

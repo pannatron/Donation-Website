@@ -38,12 +38,40 @@ export const ktTokenPubKey = KT_TOKEN_ADDRESS;
 // Export public functions
 export { getTokenBalance, getDonationProgress, sendTokens, getDonorRankings };
 
-// Cache for donor rankings
-let rankingsCache: {
+// Cache configuration
+const CACHE_TTL = 60000; // 1 minute
+
+// Interface definitions
+interface DonorRanking {
+  address: string;
+  amount: number;
+}
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+interface RankingsCache {
   data: Array<DonorRanking>;
   lastSignature: string | null;
   lastUpdate: number;
-} | null = null;
+}
+
+// Cache structures
+const cache = {
+  tokenBalances: new Map<string, CacheEntry<number>>(),
+  donationProgress: null as CacheEntry<number> | null,
+  rankings: null as RankingsCache | null
+};
+
+// Helper function to check if cache is valid
+function isCacheValid<T>(entry: CacheEntry<T> | null): boolean {
+  if (!entry || typeof entry !== 'object' || !('timestamp' in entry)) {
+    return false;
+  }
+  return Date.now() - entry.timestamp < CACHE_TTL;
+}
 
 // Helper function to safely sign transaction with enhanced error handling
 async function safeSignTransaction(wallet: any, transaction: Transaction): Promise<Transaction | null> {
@@ -333,6 +361,12 @@ async function getTokenBalance(
   walletAddress: string
 ): Promise<number> {
   try {
+    // Check cache first
+    const cachedBalance = cache.tokenBalances.get(walletAddress);
+    if (isCacheValid(cachedBalance)) {
+      return cachedBalance.data;
+    }
+
     console.log('Fetching token balance...');
     const tokenAccounts = await withTimeout(
       withRetry(
@@ -352,13 +386,18 @@ async function getTokenBalance(
       'Balance fetch'
     );
 
-    if (tokenAccounts.value.length > 0) {
-      const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-      console.log('Balance fetch successful:', balance);
-      return balance || 0;
-    }
+    const balance = tokenAccounts.value.length > 0 
+      ? tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0
+      : 0;
 
-    return 0;
+    // Update cache
+    cache.tokenBalances.set(walletAddress, {
+      data: balance,
+      timestamp: Date.now()
+    });
+
+    console.log('Balance fetch successful:', balance);
+    return balance;
   } catch (error) {
     console.error('Error getting token balance:', error);
     return 0;
@@ -367,6 +406,11 @@ async function getTokenBalance(
 
 async function getDonationProgress(): Promise<number> {
   try {
+    // Check cache first
+    if (isCacheValid(cache.donationProgress)) {
+      return cache.donationProgress.data;
+    }
+
     console.log('Fetching donation progress...');
     const tokenAccounts = await withTimeout(
       withRetry(
@@ -386,22 +430,22 @@ async function getDonationProgress(): Promise<number> {
       'Progress fetch'
     );
 
-    if (tokenAccounts.value.length > 0) {
-      const progress = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-      console.log('Progress fetch successful:', progress);
-      return progress || 0;
-    }
+    const progress = tokenAccounts.value.length > 0
+      ? tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0
+      : 0;
 
-    return 0;
+    // Update cache
+    cache.donationProgress = {
+      data: progress,
+      timestamp: Date.now()
+    };
+
+    console.log('Progress fetch successful:', progress);
+    return progress;
   } catch (error) {
     console.error('Error getting donation progress:', error);
     return 0;
   }
-}
-
-interface DonorRanking {
-  address: string;
-  amount: number;
 }
 
 async function processTransactions(
@@ -409,8 +453,8 @@ async function processTransactions(
   donationATA: PublicKey,
   donations: { [key: string]: number }
 ): Promise<void> {
-  for (const tx of transactions) {
-    if (!tx?.meta || !tx.transaction.message.instructions) continue;
+  const processPromises = transactions.map(async tx => {
+    if (!tx?.meta || !tx.transaction.message.instructions) return;
 
     for (const instruction of tx.transaction.message.instructions) {
       const parsed = instruction as ParsedInstruction;
@@ -444,7 +488,9 @@ async function processTransactions(
         }
       }
     }
-  }
+  });
+
+  await Promise.all(processPromises);
 }
 
 async function getDonorRankings(): Promise<Array<DonorRanking>> {
@@ -459,82 +505,58 @@ async function getDonorRankings(): Promise<Array<DonorRanking>> {
     // Initialize donations map
     const donations: { [key: string]: number } = {};
 
-    // If cache exists and is less than 1 minute old, fetch only new transactions
-    if (rankingsCache && (Date.now() - rankingsCache.lastUpdate) < 60000) {
-      console.log('Using cached rankings and fetching new transactions...');
-      
-      // Copy cached donations to current donations
-      Object.assign(donations, rankingsCache.data.reduce((acc, curr) => {
-        acc[curr.address] = curr.amount;
-        return acc;
-      }, {} as {[key: string]: number}));
-
-      // Fetch only new signatures since last update
-      const newSignatures = await connection.getSignaturesForAddress(
-        donationATA,
-        { until: rankingsCache.lastSignature }
-      );
-
-      if (newSignatures.length > 0) {
-        // Process new transactions in parallel
-        const newTransactions = await Promise.all(
-          newSignatures.map(sig => 
-            connection.getParsedTransaction(sig.signature, {
-              maxSupportedTransactionVersion: 0
-            })
-          )
+    // Get all signatures without limit
+    let allSignatures = [];
+    let lastSignature = null;
+    
+    while (true) {
+      try {
+        const signatures = await connection.getSignaturesForAddress(
+          donationATA,
+          lastSignature ? { before: lastSignature } : undefined
         );
-
-        await processTransactions(newTransactions, donationATA, donations);
-      }
-    } else {
-      console.log('Fetching all rankings...');
-      
-      // Get all signatures using pagination
-      let allSignatures = [];
-      let lastSignature = null;
-      
-      while (true) {
-        const options: any = { limit: 1000 };
-        if (lastSignature) {
-          options.before = lastSignature;
-        }
-        
-        const signatures = await connection.getSignaturesForAddress(donationATA, options);
         
         if (signatures.length === 0) break;
         
         allSignatures.push(...signatures);
         lastSignature = signatures[signatures.length - 1].signature;
-      }
-
-      console.log(`Total signatures found: ${allSignatures.length}`);
-
-      // Process transactions in batches
-      const BATCH_SIZE = 50;
-      for (let i = 0; i < allSignatures.length; i += BATCH_SIZE) {
-        const batch = allSignatures.slice(i, i + BATCH_SIZE);
         
-        // Fetch transactions in parallel
-        const transactions = await Promise.all(
-          batch.map(sig => 
-            connection.getParsedTransaction(sig.signature, {
-              maxSupportedTransactionVersion: 0
-            })
-          )
-        );
-
-        await processTransactions(transactions, donationATA, donations);
+        console.log(`Fetched ${allSignatures.length} signatures so far...`);
+      } catch (error) {
+        console.error('Error fetching signatures:', error);
+        break;
       }
+    }
 
-      // Update cache
-      if (allSignatures.length > 0) {
-        rankingsCache = {
-          lastSignature: allSignatures[0].signature,
-          lastUpdate: Date.now(),
-          data: Object.entries(donations).map(([address, amount]) => ({ address, amount }))
-        };
-      }
+    console.log(`Total signatures found: ${allSignatures.length}`);
+
+    // Process all transactions in parallel batches
+    const BATCH_SIZE = 50; // Process 50 transactions at a time to avoid memory issues
+    for (let i = 0; i < allSignatures.length; i += BATCH_SIZE) {
+      const batch = allSignatures.slice(i, i + BATCH_SIZE);
+      
+      // Fetch transactions in parallel
+      const transactions = await Promise.all(
+        batch.map(sig => 
+          connection.getParsedTransaction(sig.signature, {
+            maxSupportedTransactionVersion: 0
+          })
+        )
+      );
+
+      await processTransactions(transactions, donationATA, donations);
+      
+      // Log progress
+      console.log(`Processed ${Math.min(i + BATCH_SIZE, allSignatures.length)}/${allSignatures.length} transactions`);
+    }
+
+    // Update cache
+    if (allSignatures.length > 0) {
+      cache.rankings = {
+        lastSignature: allSignatures[0].signature,
+        lastUpdate: Date.now(),
+        data: Object.entries(donations).map(([address, amount]) => ({ address, amount }))
+      };
     }
 
     // Convert to array and sort by amount
@@ -546,7 +568,7 @@ async function getDonorRankings(): Promise<Array<DonorRanking>> {
 
   } catch (error) {
     console.error('Error getting donor rankings:', error);
-    return rankingsCache?.data || [];
+    return cache.rankings?.data || [];
   }
 }
 
