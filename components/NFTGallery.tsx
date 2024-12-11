@@ -19,21 +19,21 @@ const slides: NFTSlide[] = [
   },
   {
     nft: '/NFT2.jpg',
-    real: '/real2.jpg',
+    real: '/real2_1.jpg',
     title: 'Khaitun Exclusive',
     description: 'Limited edition NFT with premium benefits and exclusive access rights.',
     supply: '50'
   },
   {
     nft: '/NFT3.jpg',
-    real: '/real3.jpg',
+    real: '/real3_1.jpg',
     title: 'Khaitun Elite',
     description: 'Elite tier NFT offering maximum benefits and governance rights.',
     supply: '25'
   },
   {
     nft: '/NFT4.jpg',
-    real: '/real3.jpg',
+    real: '/real4_1.jpg',
     title: 'Khaitun Premium',
     description: 'Premium tier NFT offering adv benefits and governance rights.',
     supply: '100'
