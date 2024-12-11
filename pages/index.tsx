@@ -55,7 +55,7 @@ export default function Home() {
       
       {/* Main Layout Container */}
       <div className="pt-20 pb-12">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+        <div className="max-w-[1700px] mx-auto px-4 sm:px-6">
           {/* Grid Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-8">
             {/* Left Sidebar */}
@@ -63,12 +63,12 @@ export default function Home() {
               <div className="flex flex-col">
                 {/* Top Donors Container */}
                 <div className="-mt-6">
-                  <div className="scale-[0.92] origin-top">
+                  <div className="scale-[1] origin-top">
                     <DonationRanking />
                   </div>
                 </div>
                 {/* Special Rewards */}
-                <div className="mt-[340px] -ml-10 scale-[0.88] origin-top">
+                <div className="mt-[380px] -ml-10 scale-[1] origin-top">
                   <SpecialRewards />
                 </div>
               </div>
