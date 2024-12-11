@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { donationPubKey } from '../utils/solana-transactions';
 
 export const DonationAddress = () => {
   const [showCopied, setShowCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const donationAddress = donationPubKey;
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const copyAddress = async () => {
+    if (!mounted) return;
+    
     try {
       if (typeof window !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(donationAddress);
