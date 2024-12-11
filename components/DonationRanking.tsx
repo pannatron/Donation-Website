@@ -8,7 +8,7 @@ export const DonationRanking = React.memo(() => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { publicKey } = useWallet();
 
-  const baseClasses = "fixed top-20 left-25 z-50 w-80 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-2xl p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all duration-500 ease-out transform animate-float";
+  const baseClasses = "fixed top-20 left-8 z-20 w-80 bg-gradient-to-br from-purple-900/40 via-black/40 to-purple-900/40 backdrop-blur-md rounded-2xl p-4 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all duration-500 ease-out transform animate-float";
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
