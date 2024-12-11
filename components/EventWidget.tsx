@@ -74,7 +74,7 @@ export const EventWidget = () => {
         isWalletActive 
           ? 'top-40 pointer-events-none' 
           : 'top-25 z-20'}`}
-      style={{ right: '8.75rem' }}
+      style={{ right: '1.75rem' }}
     >
       {/* Content Container */}
       <div className={`relative p-4 rounded-2xl h-full ${isWalletActive ? 'pointer-events-auto' : ''}`}>
