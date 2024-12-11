@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Navigation } from '../components/Navigation';
 import { SocialLinks } from '../components/SocialLinks';
@@ -47,26 +46,37 @@ export default function Home() {
           layout="fill"
           objectFit="cover"
           quality={100}
+          priority
         />
       </div>
 
       <SocialLinks />
       <Navigation />
-      <DonationRanking />
-      <div className="fixed top-[520px] left-25 z-50">
-        <SpecialRewards />
+      
+      {/* Desktop widgets (shown at 1920px) */}
+      <div className="hidden xl:block">
+        <div className="fixed left-[35px] top-0 z-50">
+          <DonationRanking />
+        </div>
+        <div className="fixed top-[580px] left-[30px] z-20">
+          <SpecialRewards />
+        </div>
+        <EventWidget />
       </div>
-      <EventWidget />
 
-      <main className="container mx-auto px-4 py-4 relative z-10">
-        <motion.div 
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+      {/* Mobile/Tablet widgets (shown below 1920px) */}
+      <div className="xl:hidden">
+        <div className="flex flex-col items-center space-y-4">
+          <DonationRanking />
+          <SpecialRewards />
+          <EventWidget />
+        </div>
+      </div>
+
+      <main className="container mx-auto px-4 sm:px-6 py-4 relative z-30">
+        <div className="text-center mb-8 sm:mb-12">
           <h1 
-            className="text-4xl md:text-5xl font-bold mb-4"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 px-2"
             style={{
               background: 'linear-gradient(90deg, #ffffff 0%, #a78bfa 25%, #ffffff 50%, #818cf8 75%, #ffffff 100%)',
               backgroundSize: '200% 100%',
@@ -79,55 +89,49 @@ export default function Home() {
           >
             Khaitun Ecosystem Donation
           </h1>
-          <p className="text-xl text-gray-300 mb-8">Support the future of decentralized finance</p>
+          <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8">Support the future of decentralized finance</p>
 
           <DonationAddress />
 
           {error && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+            <div
               className={`mt-4 ${getErrorClassName(error.type)} p-3 rounded-lg mx-auto max-w-md border`}
             >
               {error.message}
-            </motion.div>
+            </div>
           )}
           {successMessage && (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+            <div
               className="mt-4 text-green-400 bg-green-900/50 border border-green-800 p-3 rounded-lg mx-auto max-w-md"
             >
               {successMessage}
-            </motion.div>
+            </div>
           )}
-        </motion.div>
+        </div>
 
-        <ProgressBar currentAmount={currentAmount} />
-        <WalletBalance connected={connected} userBalance={userBalance} />
+        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+          <ProgressBar currentAmount={currentAmount} />
+          <WalletBalance connected={connected} userBalance={userBalance} />
 
-        {connected && (
-          <>
-            <DonationButtons
-              isLoading={isLoading}
-              userBalance={userBalance}
-              onDonate={handleDonate}
-            />
-            <CustomDonation
-              isLoading={isLoading}
-              customAmount={customAmount}
-              userBalance={userBalance}
-              onCustomAmountChange={handleCustomAmountChange}
-              onDonate={handleDonate}
-            />
-          </>
-        )}
+          {connected && (
+            <div className="space-y-6 relative z-50">
+              <DonationButtons
+                isLoading={isLoading}
+                userBalance={userBalance}
+                onDonate={handleDonate}
+              />
+              <CustomDonation
+                isLoading={isLoading}
+                customAmount={customAmount}
+                userBalance={userBalance}
+                onCustomAmountChange={handleCustomAmountChange}
+                onDonate={handleDonate}
+              />
+            </div>
+          )}
 
-        <Milestones currentAmount={currentAmount} />
+          <Milestones currentAmount={currentAmount} />
+        </div>
       </main>
     </div>
   );
