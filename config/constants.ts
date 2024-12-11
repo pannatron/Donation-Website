@@ -13,7 +13,7 @@ export const PREDEFINED_AMOUNTS = [
 export const MILESTONES = [
   {
     amount: 5_000_000,
-    description: 'Launch the full ecosystem website',
+    description: 'Launch the Donation ecosystem website',
     icon: '🚀'
   },
   {
