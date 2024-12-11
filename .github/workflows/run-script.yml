@@ -1,0 +1,28 @@
+name: Deploy Node.js Application
+
+on:
+  push:
+    branches: [ stage ]
+  pull_request:
+    branches: [ stage ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+
+    # Pull latest code and update application
+    - name: Update and restart application
+      run: |
+        git pull origin main
+        npm install
+        npm run build
+        pm2 start npm --name "donation-website" -- start
