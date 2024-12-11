@@ -2,10 +2,11 @@ module.exports = {
     apps: [{
         name: 'khaitun-donation',
         script: 'npm',
-        args: 'start',
+        args: 'serve',
         env: {
             NODE_ENV: 'production',
-            PORT: 3000
+            HTTPS_PORT: 3000,
+            PORT: 3001
         }
     }]
 }

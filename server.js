@@ -10,8 +10,7 @@ const nextApp = next({ dev, dir: __dirname });
 const handle = nextApp.getRequestHandler();
 
 const app = express();
-const HTTP_PORT = process.env.PORT || 3001;
-const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3000;
 
 // SSL certificate configuration
 const sslOptions = {
@@ -25,23 +24,11 @@ nextApp.prepare().then(() => {
   app.use('/_next', express.static(path.join(__dirname, '.next')));
   app.use(express.static(path.join(__dirname, 'public')));
 
-  // Redirect HTTP to HTTPS
-  app.use((req, res, next) => {
-    if (!req.secure) {
-      return res.redirect(['https://', req.hostname, ':', HTTPS_PORT, req.url].join(''));
-    }
-    next();
-  });
-
   // Handle all routes by serving the Next.js app
   app.all('*', (req, res) => {
     return handle(req, res);
   });
-
-  // Create HTTP server
-  http.createServer(app).listen(HTTP_PORT, () => {
-    console.log(`HTTP Server running on port ${HTTP_PORT}`);
-  });
+  console.log('NODE_ENV:', process.env.NODE_ENV);
 
   // Create HTTPS server
   https.createServer(sslOptions, app).listen(HTTPS_PORT, () => {
