@@ -1,6 +1,6 @@
 export const SocialLinks = () => {
   return (
-    <div className="fixed top-4 left-4 z-30 flex flex-col gap-3">
+    <div className="fixed top-4 left-10 z-30 flex flex-row gap-4">
       <a 
         href="https://x.com/khaituntiger" 
         target="_blank" 
@@ -46,6 +46,18 @@ export const SocialLinks = () => {
       >
         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+        </svg>
+      </a>
+
+      <a 
+        href="https://www.youtube.com/@T_Diew" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+        title="YouTube"
+      >
+        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M10 3L3 21h4l7-18zm1 4l4 14h4L14 7z"/>
         </svg>
       </a>
     </div>
