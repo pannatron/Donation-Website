@@ -22,7 +22,6 @@ jobs:
     # Pull latest code and update application
     - name: Update and restart application
       run: |
-        git pull origin main
         npm install
         npm run build
         pm2 start npm --name "donation-website" -- start
