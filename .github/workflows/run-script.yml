@@ -1,27 +1,27 @@
-name: Deploy Node.js Application
-
+name: Remote SSH Deployment
 on:
   push:
-    branches: [ stage ]
-  pull_request:
-    branches: [ stage ]
+    branches:
+      - stage  # or your default branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-22.04
-
+    name: Deploy to Server
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-
-    # Set up Node.js
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20.x'
-
-    # Pull latest code and update application
-    - name: Update and restart application
-      run: |
-        npm install -f
-        npm run build
-        pm2 start npm --name "donation-website" -- start
+      - name: Executing remote SSH commands
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/khaitun/Donate-Website-Dev
+            git pull origin stage
+            echo "Deploy completed at $(date)" >> deploy.log
+            # Add your additional deployment commands here
+            # For example:
+            npm install -f
+            npm run build
+            pm2 start
