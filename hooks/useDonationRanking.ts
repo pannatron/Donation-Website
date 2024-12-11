@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getDonorRankings } from '../utils/solana-transactions';
 
 interface DonorRank {
@@ -11,13 +11,14 @@ export const useDonationRanking = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key for forcing updates
 
-  const fetchRankings = async () => {
+  const fetchRankings = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const donorRankings = await getDonorRankings();
+      const donorRankings = await getDonorRankings(); // Remove the unnecessary parameter
       setRankings(donorRankings);
     } catch (err) {
       console.error('Error fetching rankings:', err);
@@ -25,15 +26,15 @@ export const useDonationRanking = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Only fetch on initial mount
-  useEffect(() => {
-    fetchRankings();
   }, []);
 
+  // Fetch on initial mount and when refreshKey changes
+  useEffect(() => {
+    fetchRankings();
+  }, [fetchRankings, refreshKey]);
+
   const refresh = async () => {
-    await fetchRankings();
+    setRefreshKey(prev => prev + 1); // Increment refresh key to trigger re-fetch
   };
 
   return {
