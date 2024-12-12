@@ -1,4 +1,4 @@
-import React, { useState, useEffect, MouseEvent, useRef } from 'react';
+import React, { useState, useEffect, MouseEvent, useRef, TouchEvent } from 'react';
 import Image from 'next/image';
 
 interface NFTSlide {
@@ -47,6 +47,10 @@ const NFTGallery: React.FC = () => {
   const [autoRotate, setAutoRotate] = useState(true);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startRotation, setStartRotation] = useState(0);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const rotationRef = useRef(rotation);
   const animationFrameRef = useRef<number>();
@@ -73,15 +77,13 @@ const NFTGallery: React.FC = () => {
       }
 
       const deltaTime = timestamp - lastUpdateTimeRef.current;
-      // Optimize frame rate on mobile
-      const updateInterval = isMobile ? 32 : 16; // ~30fps on mobile, ~60fps on desktop
+      const updateInterval = isMobile ? 32 : 16;
 
-      if (autoRotate && deltaTime >= updateInterval) {
+      if (autoRotate && !isDragging && deltaTime >= updateInterval) {
         const rotationSpeed = isMobile ? 0.15 : 0.2;
         setRotation(prev => {
-          // Use modulo to keep rotation value from growing too large
           const newRotation = (prev + rotationSpeed) % 360;
-          return parseFloat(newRotation.toFixed(2)); // Reduce floating point precision
+          return parseFloat(newRotation.toFixed(2));
         });
         lastUpdateTimeRef.current = timestamp;
       }
@@ -96,7 +98,7 @@ const NFTGallery: React.FC = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [autoRotate, isMobile]);
+  }, [autoRotate, isMobile, isDragging]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -115,6 +117,33 @@ const NFTGallery: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove as any);
     return () => window.removeEventListener('mousemove', handleMouseMove as any);
   }, [isMobile]);
+
+  const handleDragStart = (e: MouseEvent | TouchEvent) => {
+    setIsDragging(true);
+    setAutoRotate(false);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    setStartX(clientX);
+    setStartRotation(rotation);
+  };
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const deltaX = clientX - startX;
+    const sensitivity = 0.5;
+    
+    let newRotation = startRotation - (deltaX * sensitivity);
+    newRotation = newRotation % 360;
+    if (newRotation < 0) newRotation += 360;
+    
+    setRotation(newRotation);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setTimeout(() => setAutoRotate(true), 1000);
+  };
 
   const toggleRealImage = (index: number, e: MouseEvent) => {
     e.stopPropagation();
@@ -148,9 +177,14 @@ const NFTGallery: React.FC = () => {
       </div>
 
       <div 
-        className="absolute inset-0 flex items-center justify-center"
-        onMouseEnter={() => !isMobile && setAutoRotate(false)}
-        onMouseLeave={() => !isMobile && setAutoRotate(true)}
+        className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+        onMouseDown={handleDragStart}
+        onMouseMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchStart={handleDragStart}
+        onTouchMove={handleDragMove}
+        onTouchEnd={handleDragEnd}
         style={{
           perspective: isMobile ? '1500px' : '2500px',
           transformStyle: 'preserve-3d',
