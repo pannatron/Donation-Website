@@ -46,9 +46,20 @@ const NFTGallery: React.FC = () => {
   const [rotation, setRotation] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const rotationRef = useRef(rotation);
   const animationFrameRef = useRef<number>();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     rotationRef.current = rotation;
@@ -73,7 +84,7 @@ const NFTGallery: React.FC = () => {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || isMobile) return;
       
       const rect = containerRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -87,7 +98,7 @@ const NFTGallery: React.FC = () => {
 
     window.addEventListener('mousemove', handleMouseMove as any);
     return () => window.removeEventListener('mousemove', handleMouseMove as any);
-  }, []);
+  }, [isMobile]);
 
   const toggleRealImage = (index: number, e: MouseEvent) => {
     e.stopPropagation();
@@ -97,8 +108,22 @@ const NFTGallery: React.FC = () => {
     }));
   };
 
+  const getRadius = () => {
+    if (isMobile) {
+      return window.innerWidth < 380 ? 150 : 200;
+    }
+    return 300;
+  };
+
+  const getCardDimensions = () => {
+    if (isMobile) {
+      return window.innerWidth < 380 ? { width: 280, height: 350 } : { width: 300, height: 400 };
+    }
+    return { width: 400, height: 500 };
+  };
+
   return (
-    <div className="w-full max-w-7xl mx-auto h-[450px] relative" ref={containerRef}>
+    <div className="w-full max-w-7xl mx-auto h-[450px] md:h-[500px] relative" ref={containerRef}>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-black/80 to-indigo-900/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.15),transparent_50%)]" />
@@ -108,17 +133,18 @@ const NFTGallery: React.FC = () => {
 
       <div 
         className="absolute inset-0 flex items-center justify-center"
-        onMouseEnter={() => setAutoRotate(false)}
-        onMouseLeave={() => setAutoRotate(true)}
+        onMouseEnter={() => !isMobile && setAutoRotate(false)}
+        onMouseLeave={() => !isMobile && setAutoRotate(true)}
         style={{
-          perspective: '2500px',
+          perspective: isMobile ? '1500px' : '2500px',
           transformStyle: 'preserve-3d'
         }}
       >
         {slides.map((slide, index) => {
           const angle = (360 / slides.length) * index + rotationRef.current;
           const radian = (angle * Math.PI) / 180;
-          const radius = 300;
+          const radius = getRadius();
+          const cardDimensions = getCardDimensions();
           
           const x = Math.cos(radian) * radius;
           const y = Math.sin(radian) * radius * 0.2;
@@ -138,22 +164,33 @@ const NFTGallery: React.FC = () => {
               }}
             >
               <div
-                className={`relative w-[400px] h-[500px] rounded-2xl overflow-hidden cursor-pointer transition-transform duration-500 group ${
+                className={`relative rounded-2xl overflow-hidden cursor-pointer transition-transform duration-500 group ${
                   isHovered ? 'brightness-110' : 'brightness-50'
                 } ${index === 0 ? 'animate-shimmer-gold' : index === 1 ? 'animate-shimmer-silver' : 'animate-shimmer-bronze'}`}
-                onMouseEnter={() => {
-                  setHoveredIndex(index);
-                  setAutoRotate(false);
-                }}
-                onMouseLeave={() => {
-                  setHoveredIndex(null);
-                  setAutoRotate(true);
-                }}
                 style={{
-                  transform: isHovered 
+                  width: `${cardDimensions.width}px`,
+                  height: `${cardDimensions.height}px`,
+                  transform: isHovered && !isMobile
                     ? `rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg)`
                     : 'none',
                   transformStyle: 'preserve-3d'
+                }}
+                onMouseEnter={() => {
+                  if (!isMobile) {
+                    setHoveredIndex(index);
+                    setAutoRotate(false);
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (!isMobile) {
+                    setHoveredIndex(null);
+                    setAutoRotate(true);
+                  }
+                }}
+                onClick={() => {
+                  if (isMobile) {
+                    setHoveredIndex(hoveredIndex === index ? null : index);
+                  }
                 }}
               >
                 {/* Enhanced Glow Effect */}
@@ -183,7 +220,7 @@ const NFTGallery: React.FC = () => {
                     src={showRealImages[index] ? slide.real : slide.nft}
                     alt={slide.title}
                     fill
-                    sizes="400px"
+                    sizes={`(max-width: 768px) ${cardDimensions.width}px, 400px`}
                     quality={90}
                     priority
                     className={`object-cover transition-all duration-300 group-hover:scale-105 will-change-transform ${
@@ -198,25 +235,25 @@ const NFTGallery: React.FC = () => {
                     isHovered ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <div className="absolute inset-x-0 bottom-0 p-6 pt-52">
-                    <div className="mb-4 space-x-3">
-                      <span className="inline-block bg-gradient-to-r from-purple-500/40 to-indigo-500/40 backdrop-blur-sm px-4 py-2 rounded-xl text-sm text-white border border-purple-500/30 hover:border-purple-500/50 transition-colors">
+                  <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 pt-32 md:pt-52">
+                    <div className="mb-3 md:mb-4 space-x-2 md:space-x-3">
+                      <span className="inline-block bg-gradient-to-r from-purple-500/40 to-indigo-500/40 backdrop-blur-sm px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm text-white border border-purple-500/30 hover:border-purple-500/50 transition-colors">
                         Supply: {slide.supply}
                       </span>
-                      <span className="inline-block bg-gradient-to-r from-indigo-500/40 to-purple-500/40 backdrop-blur-sm px-4 py-2 rounded-xl text-sm text-white font-semibold border border-purple-500/30 hover:border-purple-500/50 transition-colors">
+                      <span className="inline-block bg-gradient-to-r from-indigo-500/40 to-purple-500/40 backdrop-blur-sm px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm text-white font-semibold border border-purple-500/30 hover:border-purple-500/50 transition-colors">
                         Mint Soon
                       </span>
                     </div>
 
-                    <h3 className="text-xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-indigo-200">
+                    <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-indigo-200">
                       {slide.title}
                     </h3>
-                    <p className="text-sm text-slate-200 mb-4">
+                    <p className="text-xs md:text-sm text-slate-200 mb-3 md:mb-4">
                       {slide.description}
                     </p>
                     
                     <button 
-                      className="bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-500 hover:to-indigo-600 text-white px-6 py-2 rounded-xl text-sm relative overflow-hidden group/btn w-fit transition-transform duration-300 hover:scale-105 active:scale-95 border border-purple-500/30"
+                      className="bg-gradient-to-r from-purple-500/80 to-indigo-600/80 hover:from-purple-500 hover:to-indigo-600 text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl text-xs md:text-sm relative overflow-hidden group/btn w-fit transition-transform duration-300 hover:scale-105 active:scale-95 border border-purple-500/30"
                       onClick={(e: MouseEvent<HTMLButtonElement>) => toggleRealImage(index, e)}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent opacity-0 group-hover/btn:opacity-20 transition-opacity duration-300" />
@@ -226,7 +263,7 @@ const NFTGallery: React.FC = () => {
                 </div>
 
                 <div
-                  className={`absolute top-4 right-4 bg-gradient-to-r from-purple-500/80 to-indigo-600/80 backdrop-blur-sm px-3 py-1 rounded-xl text-xs text-white font-medium transition-all duration-300 border border-purple-500/30 ${
+                  className={`absolute top-3 md:top-4 right-3 md:right-4 bg-gradient-to-r from-purple-500/80 to-indigo-600/80 backdrop-blur-sm px-2 md:px-3 py-1 rounded-xl text-[10px] md:text-xs text-white font-medium transition-all duration-300 border border-purple-500/30 ${
                     isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
                   }`}
                 >
@@ -253,7 +290,6 @@ const NFTGallery: React.FC = () => {
           0%, 100% { box-shadow: 0 0 15px rgba(180, 83, 9, 0.3); }
           50% { box-shadow: 0 0 25px rgba(180, 83, 9, 0.5); }
         }
-
 
         @keyframes shine-intense {
           0% { transform: translateX(-200%) rotate(-45deg); }
