@@ -55,6 +55,8 @@ const NFTGallery: React.FC = () => {
   const rotationRef = useRef(rotation);
   const animationFrameRef = useRef<number>();
   const lastUpdateTimeRef = useRef(0);
+  const lastTouchTime = useRef(0);
+  const touchThrottleDelay = 16; // Throttle touch events to ~60fps
 
   useEffect(() => {
     const checkMobile = () => {
@@ -77,10 +79,12 @@ const NFTGallery: React.FC = () => {
       }
 
       const deltaTime = timestamp - lastUpdateTimeRef.current;
-      const updateInterval = isMobile ? 32 : 16;
+      // Increased update interval for mobile for better performance
+      const updateInterval = isMobile ? 48 : 16;
 
       if (autoRotate && !isDragging && deltaTime >= updateInterval) {
-        const rotationSpeed = isMobile ? 0.15 : 0.2;
+        // Reduced rotation speed on mobile
+        const rotationSpeed = isMobile ? 0.1 : 0.2;
         setRotation(prev => {
           const newRotation = (prev + rotationSpeed) % 360;
           return parseFloat(newRotation.toFixed(2));
@@ -128,10 +132,18 @@ const NFTGallery: React.FC = () => {
 
   const handleDragMove = (e: MouseEvent | TouchEvent) => {
     if (!isDragging) return;
+
+    // Throttle touch events
+    const now = Date.now();
+    if ('touches' in e && now - lastTouchTime.current < touchThrottleDelay) {
+      return;
+    }
+    lastTouchTime.current = now;
     
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const deltaX = clientX - startX;
-    const sensitivity = 0.5;
+    // Adjusted sensitivity for smoother mobile experience
+    const sensitivity = isMobile ? 0.3 : 0.5;
     
     let newRotation = startRotation - (deltaX * sensitivity);
     newRotation = newRotation % 360;
@@ -155,14 +167,14 @@ const NFTGallery: React.FC = () => {
 
   const getRadius = () => {
     if (isMobile) {
-      return window.innerWidth < 380 ? 150 : 200;
+      return window.innerWidth < 380 ? 120 : 160; // Reduced radius for mobile
     }
     return 300;
   };
 
   const getCardDimensions = () => {
     if (isMobile) {
-      return window.innerWidth < 380 ? { width: 280, height: 350 } : { width: 300, height: 400 };
+      return window.innerWidth < 380 ? { width: 240, height: 300 } : { width: 260, height: 340 }; // Reduced card size for mobile
     }
     return { width: 400, height: 500 };
   };
@@ -186,7 +198,7 @@ const NFTGallery: React.FC = () => {
         onTouchMove={handleDragMove}
         onTouchEnd={handleDragEnd}
         style={{
-          perspective: isMobile ? '1500px' : '2500px',
+          perspective: isMobile ? '1000px' : '2500px', // Reduced perspective for mobile
           transformStyle: 'preserve-3d',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden'
@@ -199,26 +211,35 @@ const NFTGallery: React.FC = () => {
           const cardDimensions = getCardDimensions();
           
           const x = Math.cos(radian) * radius;
-          const y = Math.sin(radian) * radius * 0.2;
+          const y = Math.sin(radian) * radius * (isMobile ? 0.1 : 0.2); // Reduced vertical offset for mobile
           const z = Math.sin(radian) * radius;
 
           const scale = (z + radius) / (radius * 2);
           const zIndex = Math.round(scale * 1000);
           const isHovered = hoveredIndex === index;
 
+          // Simplified transform for mobile
+          const transform = isMobile 
+            ? `translate3d(${x}px, ${y}px, ${z}px) scale(${0.5 + scale * 0.5})`
+            : `translate3d(${x}px, ${y}px, ${z}px) scale(${0.5 + scale * 0.5})`;
+
           return (
             <div
               key={index}
               className="absolute transition-transform duration-500 ease-out"
               style={{
-                transform: `translate3d(${x}px, ${y}px, ${z}px) scale(${0.5 + scale * 0.5})`,
+                transform,
                 zIndex,
                 willChange: 'transform',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
-                WebkitTransform: `translate3d(${x}px, ${y}px, ${z}px) scale(${0.5 + scale * 0.5})`,
+                WebkitTransform: transform,
                 WebkitPerspective: '1000',
-                WebkitTransformStyle: 'preserve-3d'
+                WebkitTransformStyle: 'preserve-3d',
+                transform3d: 'preserve-3d',
+                '-webkit-transform-style': 'preserve-3d',
+                '-webkit-backface-visibility': 'hidden',
+                '-webkit-perspective': '1000'
               }}
             >
               <div
@@ -254,29 +275,33 @@ const NFTGallery: React.FC = () => {
                   }
                 }}
               >
-                {/* Enhanced Glow Effect */}
-                <div 
-                  className={`absolute inset-0 rounded-2xl blur-2xl transition-all duration-500 ${
-                    isHovered ? 'opacity-80 scale-105 animate-pulse-glow' : 'opacity-0'
-                  }`}
-                  style={{ 
-                    background: 'linear-gradient(135deg, rgba(147, 197, 253, 0.4), rgba(59, 130, 246, 0.4))',
-                    willChange: 'transform, opacity'
-                  }}
-                />
+                {/* Simplified glow effect for mobile */}
+                {!isMobile && (
+                  <div 
+                    className={`absolute inset-0 rounded-2xl blur-2xl transition-all duration-500 ${
+                      isHovered ? 'opacity-80 scale-105 animate-pulse-glow' : 'opacity-0'
+                    }`}
+                    style={{ 
+                      background: 'linear-gradient(135deg, rgba(147, 197, 253, 0.4), rgba(59, 130, 246, 0.4))',
+                      willChange: 'transform, opacity'
+                    }}
+                  />
+                )}
 
-                {/* Enhanced Shine Effect */}
-                <div 
-                  className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
-                    isHovered ? 'opacity-100 animate-shine-intense' : 'opacity-0 group-hover:opacity-100 animate-shine'
-                  }`}
-                  style={{
-                    background: isHovered
-                      ? 'linear-gradient(105deg, transparent 35%, rgba(147, 197, 253, 0.4) 40%, rgba(59, 130, 246, 0.5) 42%, rgba(147, 197, 253, 0.4) 44%, transparent 49%)'
-                      : 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.2) 47%, rgba(255, 255, 255, 0.1) 49%, transparent 54%)',
-                    willChange: 'transform, opacity'
-                  }}
-                />
+                {/* Simplified shine effect for mobile */}
+                {!isMobile && (
+                  <div 
+                    className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${
+                      isHovered ? 'opacity-100 animate-shine-intense' : 'opacity-0 group-hover:opacity-100 animate-shine'
+                    }`}
+                    style={{
+                      background: isHovered
+                        ? 'linear-gradient(105deg, transparent 35%, rgba(147, 197, 253, 0.4) 40%, rgba(59, 130, 246, 0.5) 42%, rgba(147, 197, 253, 0.4) 44%, transparent 49%)'
+                        : 'linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.2) 47%, rgba(255, 255, 255, 0.1) 49%, transparent 54%)',
+                      willChange: 'transform, opacity'
+                    }}
+                  />
+                )}
 
                 <div className="absolute inset-0 transition-transform duration-500 will-change-transform">
                   <Image
@@ -284,15 +309,17 @@ const NFTGallery: React.FC = () => {
                     alt={slide.title}
                     fill
                     sizes={`(max-width: 768px) ${cardDimensions.width}px, 400px`}
-                    quality={90}
-                    priority
+                    quality={isMobile ? 75 : 90} // Reduced quality for mobile
+                    priority={index < 2} // Only prioritize loading first two images
                     className={`object-cover transition-all duration-300 group-hover:scale-105 will-change-transform ${
-                      isHovered ? 'brightness-125 animate-pulse-bright' : ''
+                      isHovered ? 'brightness-125' : ''
                     }`}
-                    loading="eager"
+                    loading={index < 2 ? "eager" : "lazy"} // Lazy load non-priority images
                     style={{
                       backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden'
+                      WebkitBackfaceVisibility: 'hidden',
+                      transform: 'translateZ(0)', // Force GPU acceleration
+                      WebkitTransform: 'translateZ(0)'
                     }}
                   />
                 </div>
