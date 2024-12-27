@@ -456,6 +456,9 @@ async function processTransactions(
   const processPromises = transactions.map(async tx => {
     if (!tx?.meta || !tx.transaction.message.instructions) return;
 
+    // Get the transaction signer (fallback donor address)
+    const signerAddress = tx.transaction.message.accountKeys[0].pubkey.toString();
+
     for (const instruction of tx.transaction.message.instructions) {
       const parsed = instruction as ParsedInstruction;
       
@@ -474,17 +477,25 @@ async function processTransactions(
 
         try {
           const sourceAccountInfo = await connection.getParsedAccountInfo(new PublicKey(sourceAddress));
+          let donorAddress = signerAddress; // Default to transaction signer
+
           if (sourceAccountInfo.value && 'parsed' in sourceAccountInfo.value.data) {
             const parsedData = sourceAccountInfo.value.data as ParsedAccountData;
-            const ownerAddress = parsedData.parsed.info.owner;
-
-            if (!donations[ownerAddress]) {
-              donations[ownerAddress] = 0;
-            }
-            donations[ownerAddress] += amount;
+            // Only use the owner address if we can successfully parse it
+            donorAddress = parsedData.parsed.info.owner;
           }
+
+          if (!donations[donorAddress]) {
+            donations[donorAddress] = 0;
+          }
+          donations[donorAddress] += amount;
         } catch (error) {
-          console.error('Error getting source account owner:', error);
+          // If we can't get the source account info, use the transaction signer
+          console.log('Using transaction signer as donor:', signerAddress);
+          if (!donations[signerAddress]) {
+            donations[signerAddress] = 0;
+          }
+          donations[signerAddress] += amount;
         }
       }
     }
