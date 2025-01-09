@@ -11,6 +11,7 @@ import { DonationRanking } from '../components/DonationRanking';
 import { SpecialRewards } from '../components/SpecialRewards';
 import { EventWidget } from '../components/EventWidget';
 import { useDonation } from '../hooks/useDonation';
+import ChatBot from '../components/ChatBot';
 
 export default function Home() {
   const {
@@ -37,7 +38,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-black text-white relative">
       {/* Tiger Background */}
       <div className="fixed inset-0 opacity-10 pointer-events-none">
         <Image
@@ -150,6 +151,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <ChatBot />
     </div>
   );
 }

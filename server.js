@@ -4,13 +4,14 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const next = require('next');
+const cors = require('cors');
 
 const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev, dir: __dirname });
 const handle = nextApp.getRequestHandler();
 
 const app = express();
-const HTTPS_PORT = process.env.HTTPS_PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 // SSL certificate configuration
 const sslOptions = {
@@ -20,6 +21,14 @@ const sslOptions = {
 
 // Initialize Next.js
 nextApp.prepare().then(() => {
+  // Enable CORS
+  app.use(cors({
+    origin: 'https://8.219.116.189:3443',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  }));
+
   // Serve static files from the '.next' directory
   app.use('/_next', express.static(path.join(__dirname, '.next')));
   app.use(express.static(path.join(__dirname, 'public')));
